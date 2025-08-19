@@ -3,24 +3,25 @@ session_start();
 error_reporting(0);
 include("includes/config.php");
 
-if(isset($_POST['submit']))
-{
-    $email = mysqli_real_escape_string($con, $_POST['username']);
+if (isset($_POST['submit'])) {
+    $icnumber = mysqli_real_escape_string($con, $_POST['username']);
     $password = $_POST['password'];
 
-    $stmt = $con->prepare("SELECT * FROM users WHERE userEmail = ?");
-    $stmt->bind_param("s", $email);
+    $stmt = $con->prepare("SELECT * FROM users WHERE icnumber = ?");
+    $stmt->bind_param("s", $icnumber);
     $stmt->execute();
     $result = $stmt->get_result();
     $row = $result->fetch_assoc();
 
-    if($row && password_verify($password, $row['password'])) {
-        $_SESSION['login'] = $row['userEmail'];
+    if ($row && password_verify($password, $row['password'])) {
+        $_SESSION['login'] = $row['icnumber'];
         $_SESSION['id'] = $row['id'];
-        $host = $_SERVER['HTTP_HOST'];
         $uip = $_SERVER['REMOTE_ADDR'];
         $status = 1;
-        $log = mysqli_query($con, "INSERT INTO userlog(uid, username, userip, status) VALUES ('".$_SESSION['id']."', '".$_SESSION['login']."', '$uip', '$status')");
+
+        mysqli_query($con, "INSERT INTO userlog(uid, username, userip, status) VALUES ('".$_SESSION['id']."', '".$_SESSION['login']."', '$uip', '$status')");
+
+        $host = $_SERVER['HTTP_HOST'];
         $uri = rtrim(dirname($_SERVER['PHP_SELF']), '/\\');
         header("Location: http://$host$uri/dashboard.php");
         exit();
@@ -29,153 +30,119 @@ if(isset($_POST['submit']))
         $uip = $_SERVER['REMOTE_ADDR'];
         $status = 0;
         mysqli_query($con, "INSERT INTO userlog(username, userip, status) VALUES ('".$_SESSION['login']."', '$uip', '$status')");
-        $errormsg = "Emel atau kata laluan salah.";
+        $errormsg = "Nombor IC atau kata laluan salah.";
     }
 }
 
-if(isset($_POST['change']))
-{
-    $email = mysqli_real_escape_string($con, $_POST['email']);
+if (isset($_POST['change'])) {
+    $icnumber = mysqli_real_escape_string($con, $_POST['icnumber']);
     $contact = mysqli_real_escape_string($con, $_POST['contact']);
     $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
 
-    $stmt = $con->prepare("SELECT * FROM users WHERE userEmail = ? AND contactno = ?");
-    $stmt->bind_param("ss", $email, $contact);
+    $stmt = $con->prepare("SELECT * FROM users WHERE icnumber = ? AND contactno = ?");
+    $stmt->bind_param("ss", $icnumber, $contact);
     $stmt->execute();
     $result = $stmt->get_result();
     $row = $result->fetch_assoc();
 
-    if($row) {
-        $stmt = $con->prepare("UPDATE users SET password = ? WHERE userEmail = ? AND contactno = ?");
-        $stmt->bind_param("sss", $password, $email, $contact);
+    if ($row) {
+        $stmt = $con->prepare("UPDATE users SET password = ? WHERE icnumber = ? AND contactno = ?");
+        $stmt->bind_param("sss", $password, $icnumber, $contact);
         $stmt->execute();
         $msg = "Kata laluan berjaya ditukar.";
     } else {
-        $errormsg = "Emel atau nombor telefon tidak sah.";
+        $errormsg = "Nombor IC atau nombor telefon tidak sah.";
     }
 }
 ?>
 <!DOCTYPE html>
-<html lang="en">
-  <head>
+<html lang="ms">
+<head>
     <meta charset="utf-8">
+    <title>PTA | Log Masuk Pengguna</title>
+    <link rel="icon" href="logopta.png" type="image/png">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="">
-    <meta name="author" content="Dashboard">
-    <meta name="keyword" content="Dashboard, Bootstrap, Admin, Template, Theme, Responsive, Fluid, Retina">
-
-    <title>PTA | User Login</title>
-	<link rel="icon" href="logopta.png" type="image/png">
-
-    <!-- Bootstrap core CSS -->
+    
     <link href="assets/css/bootstrap.css" rel="stylesheet">
-    <!--external css-->
     <link href="assets/font-awesome/css/font-awesome.css" rel="stylesheet" />
-        
-    <!-- Custom styles for this template -->
     <link href="assets/css/style.css" rel="stylesheet">
     <link href="assets/css/style-responsive.css" rel="stylesheet">
-<script type="text/javascript">
-function valid()
-{
- if(document.forgot.password.value!= document.forgot.confirmpassword.value)
-{
-alert("Password and Confirm Password Field do not match  !!");
-document.forgot.confirmpassword.focus();
-return false;
-}
-return true;
-}
-</script>
-  </head>
 
-  <body>
-
-      <!-- **********************************************************************************************************************************************************
-      MAIN CONTENT
-      *********************************************************************************************************************************************************** -->
-
-	  <div id="login-page">
-	  	<div class="container">
-	  		<h3 align="center" style="color:#fff"><a href="https://ptadmin.tvetikmb.com/" style="color:#fff">PTA Service management System</a></h3>
-	<hr />
-		      <form class="form-login" name="login" method="post">
-		        <h2 class="form-login-heading">sign in now</h2>
-		        <p style="padding-left:4%; padding-top:2%;  color:red">
-		        	<?php if($errormsg){
-echo htmlentities($errormsg);
-		        		}?></p>
-
-		        		<p style="padding-left:4%; padding-top:2%;  color:green">
-		        	<?php if($msg){
-echo htmlentities($msg);
-		        		}?></p>
-		        <div class="login-wrap">
-		            <input type="text" class="form-control" name="username" placeholder="Email"  required autofocus>
-		            <br>
-		            <input type="password" class="form-control" name="password" required placeholder="Password">
-		            <label class="checkbox">
-		                <span class="pull-right">
-		                    <a data-toggle="modal" href="login.html#myModal"> Forgot Password?</a>
-		
-		                </span>
-		            </label>
-		            <button class="btn btn-theme btn-block" name="submit" type="submit"><i class="fa fa-lock"></i> SIGN IN</button>
-		            <hr>
-		           </form>
-		            <div class="registration">
-		                Don't have an account yet?<br/>
-		                <a class="" href="registration.php">
-		                    Create an account
-		                </a>
-		            </div>
-		
-		        </div>
-		
-		          <!-- Modal -->
-		           <form class="form-login" name="forgot" method="post">
-		          <div aria-hidden="true" aria-labelledby="myModalLabel" role="dialog" tabindex="-1" id="myModal" class="modal fade">
-		              <div class="modal-dialog">
-		                  <div class="modal-content">
-		                      <div class="modal-header">
-		                          <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-		                          <h4 class="modal-title">Forgot Password ?</h4>
-		                      </div>
-		                      <div class="modal-body">
-		                          <p>Enter your details below to reset your password.</p>
-<input type="email" name="email" placeholder="Email" autocomplete="off" class="form-control" required><br >
-<input type="text" name="contact" placeholder="contact No" autocomplete="off" class="form-control" required><br>
- <input type="password" class="form-control" placeholder="New Password" id="password" name="password"  required ><br />
-<input type="password" class="form-control unicase-form-control text-input" placeholder="Confirm Password" id="confirmpassword" name="confirmpassword" required >
-
-		
-		                      </div>
-		                      <div class="modal-footer">
-		                          <button data-dismiss="modal" class="btn btn-default" type="button">Cancel</button>
-		                          <button class="btn btn-theme" type="submit" name="change" onclick="return valid();">Submit</button>
-		                      </div>
-		                  </div>
-		              </div>
-		          </div>
-		          <!-- modal -->
-		          </form>
-		
-		      	  	
-	  	
-	  	</div>
-	  </div>
-
-    <!-- js placed at the end of the document so the pages load faster -->
-    <script src="assets/js/jquery.js"></script>
-    <script src="assets/js/bootstrap.min.js"></script>
-
-    <!--BACKSTRETCH-->
-    <!-- You can use an image of whatever size. This script will stretch to fit in any screen size.-->
-    <script type="text/javascript" src="assets/js/jquery.backstretch.min.js"></script>
-    <script>
-        $.backstretch("assets/img/login-bg.jpg", {speed: 500});
+    <script type="text/javascript">
+    function valid() {
+        if (document.forgot.password.value !== document.forgot.confirmpassword.value) {
+            alert("Kata laluan dan pengesahan tidak sepadan!");
+            document.forgot.confirmpassword.focus();
+            return false;
+        }
+        return true;
+    }
     </script>
+</head>
+<body>
+<div id="login-page">
+    <div class="container">
+        <h3 align="center" style="color:#fff">
+            <a href="https://ptadmin.tvetikmb.com/" style="color:#fff">PTA Service Management System</a>
+        </h3>
+        <hr/>
+        <form class="form-login" name="login" method="post">
+            <h2 class="form-login-heading">Log Masuk Sekarang</h2>
 
+            <p style="color:red"><?php if ($errormsg) echo htmlentities($errormsg); ?></p>
+            <p style="color:green"><?php if ($msg) echo htmlentities($msg); ?></p>
 
-  </body>
+            <div class="login-wrap">
+                <input type="text" class="form-control" name="username" placeholder="Nombor IC" required autofocus><br>
+                <input type="password" class="form-control" name="password" required placeholder="Kata Laluan">
+                <label class="checkbox">
+                    <span class="pull-right">
+                        <a data-toggle="modal" href="#myModal">Lupa Kata Laluan?</a>
+                    </span>
+                </label>
+                <button class="btn btn-theme btn-block" name="submit" type="submit"><i class="fa fa-lock"></i> LOG MASUK</button>
+                <hr>
+                <div class="registration">
+                    Belum berdaftar?<br/>
+                    <a class="" href="registration.php">Daftar Sekarang</a>
+                </div>
+            </div>
+        </form>
+
+        <!-- Modal Lupa Kata Laluan -->
+        <form class="form-login" name="forgot" method="post" onsubmit="return valid();">
+            <div id="myModal" class="modal fade" tabindex="-1" role="dialog">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal">&times;</button>
+                            <h4 class="modal-title">Lupa Kata Laluan?</h4>
+                        </div>
+                        <div class="modal-body">
+                            <p>Sila masukkan maklumat untuk menetapkan semula kata laluan anda.</p>
+                            <input type="text" name="icnumber" placeholder="Nombor IC" class="form-control" required><br>
+                            <input type="text" name="contact" placeholder="Nombor Telefon" class="form-control" required><br>
+                            <input type="password" class="form-control" placeholder="Kata Laluan Baharu" name="password" required><br>
+                            <input type="password" class="form-control" placeholder="Sahkan Kata Laluan" name="confirmpassword" required>
+                        </div>
+                        <div class="modal-footer">
+                            <button class="btn btn-default" type="button" data-dismiss="modal">Batal</button>
+                            <button class="btn btn-theme" type="submit" name="change">Hantar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+        <!-- Tamat Modal -->
+    </div>
+</div>
+
+<!-- JS -->
+<script src="assets/js/jquery.js"></script>
+<script src="assets/js/bootstrap.min.js"></script>
+<script src="assets/js/jquery.backstretch.min.js"></script>
+<script>
+    $.backstretch("assets/img/login-bg.jpg", {speed: 500});
+</script>
+</body>
 </html>
